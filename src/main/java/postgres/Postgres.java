@@ -16,21 +16,27 @@ import java.time.format.DateTimeFormatter;
 public class Postgres {
 
     private Connection c;
+    private static final String POSTGRES_HOST_VAR = "POSTGRES_HOST";
     private static String TABLE = "channel_ids";
     private static String filePath = "channels.txt";
+    //get from your stack 'output'
+    private static String callbackUrl = "https://xx.execute-api.us-east-1.amazonaws.com/Prod/notify";
 
     public static void main(String[] args) {
         Postgres pg = new Postgres();
-        pg.createTable(TABLE);
-        pg.addChannelsToDB(TABLE, filePath);
-//        pg.printTable(TABLE);
-//        pg.subscribeToYoutube(TABLE, callbackUrl);
+
+        if (args.length != 0) {
+            if      (args[0].equals("print"))       pg.printTable(TABLE);
+            else if (args[0].equals("addChannels")) pg.addChannelsToDB(TABLE, filePath);
+            else if (args[0].equals("subscribe"))   pg.subscribeToYoutube(TABLE, callbackUrl);
+        }
+
         pg.close();
     }
 
     public Postgres() {
         try {
-            c = DriverManager.getConnection("jdbc:postgresql://ec2-3-211-145-95.compute-1.amazonaws.com:5432/makrdb", "postgres", "nopass");
+            c = DriverManager.getConnection(POSTGRES_HOST_VAR, "postgres", "nopass");
             System.out.println("Opened database successfully");
         } catch (Exception e) {
            e.printStackTrace();

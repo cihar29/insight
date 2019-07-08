@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: YouTube Push Notifications handler. It will send video information to Elasticsearch
+
+Globals:
+  Api:
+    # API Gateway regional endpoints
+    EndpointConfiguration: REGIONAL
+
+Resources:
+  # https://github.com/awslabs/serverless-application-model/blob/develop/versions/2016-10-31.md#awsserverlessfunction
+  YouTubePushNotificationsHandlerLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: YouTubePushNotificationsHandlerLambda
+      Handler: elasticsearch.StreamLambdaHandler::handleRequest
+      Runtime: java8
+      CodeUri: target/insight-1.0-SNAPSHOT.jar
+      MemorySize: 256
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        # Allow lambda to run in a VPC
+        - VPCAccessPolicy: {}
+      Timeout: 20
+      Events:
+        GetResource:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: any
+      Environment:
+        Variables:
+          # name of index (must be lowercase)
+          ELASTICSEARCH_INDEX: videos
+          # public ip of cluster master here
+          ELASTICSEARCH_HOST: http://ec2-xx.compute-1.amazonaws.com
+          # public ip of postgres here
+          POSTGRES_HOST: jdbc:postgresql://ec2-xx.compute-1.amazonaws.com:5432/YOUR_DB_NAME
+      VpcConfig:
+        # These subnets are created when creating the kafka cluster. Each corresponds to an availability zone
+        SubnetIds:
+        - subnet-xx
+        SecurityGroupIds
+        - sg-xx
+
+Outputs:
+  YouTubePushNotificationsLambdaEndpoint:
+    Description: Challenge url
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/notify?hub.challenge=ready'
+    Export:
+      Name: YouTubePushNotificationsLambdaEndpoint
